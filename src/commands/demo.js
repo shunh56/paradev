@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync, realpathSync } from "fs";
 import { join } from "path";
 import chalk from "chalk";
 import { confirm, select } from "../interactive.js";
@@ -7,7 +7,9 @@ import { createWorktree, getWorktreePath, getRepoName } from "../git.js";
 import { addTask } from "../state.js";
 import { launchClaudeInTerminal } from "../claude.js";
 
-const DEMO_PATH = "/tmp/paradev-demo";
+// Use realpathSync to resolve /tmp → /private/tmp on macOS
+const DEMO_PATH_RAW = "/tmp/paradev-demo";
+let DEMO_PATH = DEMO_PATH_RAW;
 
 export async function demoCommand() {
   console.log();
@@ -70,6 +72,8 @@ export async function demoCommand() {
     cwd: DEMO_PATH,
     stdio: "pipe",
   });
+  // Resolve symlinks (macOS: /tmp → /private/tmp)
+  DEMO_PATH = realpathSync(DEMO_PATH);
   console.log(chalk.green("done"));
 
   // Step 2: Define tasks
