@@ -1,6 +1,6 @@
 {
   "name": "paradev",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Parallel development with Claude Code × git worktree",
   "bin": {
     "paradev": "./bin/paradev.js"
