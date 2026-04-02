@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { basename, dirname, join } from "path";
+import { basename, dirname, join, resolve } from "path";
 import { existsSync } from "fs";
 
 export function isGitRepo(dir) {
@@ -15,10 +15,31 @@ export function isGitRepo(dir) {
 }
 
 export function getRepoRoot(dir) {
-  return execSync("git rev-parse --show-toplevel", {
+  const toplevel = execSync("git rev-parse --show-toplevel", {
     cwd: dir,
     encoding: "utf-8",
   }).trim();
+
+  // If inside a worktree, resolve to the main repository path
+  try {
+    const gitCommonDir = execSync("git rev-parse --git-common-dir", {
+      cwd: dir,
+      encoding: "utf-8",
+    }).trim();
+    // If git-common-dir differs from git-dir, we're in a worktree
+    const gitDir = execSync("git rev-parse --git-dir", {
+      cwd: dir,
+      encoding: "utf-8",
+    }).trim();
+    if (gitCommonDir !== gitDir) {
+      // gitCommonDir points to main repo's .git directory
+      const mainGitDir = resolve(toplevel, gitCommonDir);
+      return dirname(mainGitDir);
+    }
+  } catch {
+    // Fallback to toplevel
+  }
+  return toplevel;
 }
 
 export function getRepoName(repoRoot) {
@@ -109,23 +130,42 @@ export function getWorktreePath(repoRoot, branch) {
 }
 
 export function getDiffStat(dir) {
+  // Try diff against main/master branch (committed + uncommitted changes)
+  const bases = ["main", "master"];
+  for (const base of bases) {
+    try {
+      const output = execSync(`git diff --stat ${base}...HEAD`, {
+        cwd: dir,
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+      return parseDiffStat(output);
+    } catch {
+      // base branch doesn't exist, try next
+    }
+  }
+  // Fallback: diff against HEAD (uncommitted changes only)
   try {
     const output = execSync("git diff --stat HEAD", {
       cwd: dir,
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
     });
-    const lines = output.trim().split("\n");
-    const summary = lines[lines.length - 1] || "";
-    const insertions = summary.match(/(\d+) insertion/);
-    const deletions = summary.match(/(\d+) deletion/);
-    const files = summary.match(/(\d+) file/);
-    return {
-      files: files ? parseInt(files[1]) : 0,
-      insertions: insertions ? parseInt(insertions[1]) : 0,
-      deletions: deletions ? parseInt(deletions[1]) : 0,
-    };
+    return parseDiffStat(output);
   } catch {
     return { files: 0, insertions: 0, deletions: 0 };
   }
+}
+
+function parseDiffStat(output) {
+  const lines = output.trim().split("\n");
+  const summary = lines[lines.length - 1] || "";
+  const insertions = summary.match(/(\d+) insertion/);
+  const deletions = summary.match(/(\d+) deletion/);
+  const files = summary.match(/(\d+) file/);
+  return {
+    files: files ? parseInt(files[1]) : 0,
+    insertions: insertions ? parseInt(insertions[1]) : 0,
+    deletions: deletions ? parseInt(deletions[1]) : 0,
+  };
 }

@@ -54,9 +54,11 @@ export function addTask(repoPath, task) {
     (t) => t.branch === task.branch
   );
   if (existing >= 0) {
+    // Only update operational fields, preserve original task description
+    const { task: _taskDesc, ...operationalUpdates } = task;
     state.repos[repoPath].tasks[existing] = {
       ...state.repos[repoPath].tasks[existing],
-      ...task,
+      ...operationalUpdates,
       updatedAt: new Date().toISOString(),
     };
   } else {
