@@ -34,6 +34,20 @@ Pipeline: GitHub Actions
 |--------|------|---------|
 | `NPM_TOKEN` | npm publish 認証 | GitHub repo Settings > Secrets |
 
+### NPM Token 作成手順 (重要)
+
+npm の Security Key 2FA を使用しているため、以下の順番を厳守:
+
+1. **2FA が有効な状態で** Granular Access Token を作成
+2. 「Bypass two-factor authentication」に **必ずチェック**
+3. Packages: All packages, Read and write
+4. Token を GitHub Secrets の `NPM_TOKEN` に格納
+
+注意:
+- 2FA 無効状態で作ったトークンは bypass フラグが無効になる
+- Token の有効期限はデフォルト7日 (最大90日) → 期限切れに注意
+- `--provenance` フラグは Security Key 2FA と互換性がないため使用しない
+
 ## Trigger 条件
 
 - `push` to `main` branch のみ
