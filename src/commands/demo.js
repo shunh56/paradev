@@ -6,6 +6,7 @@ import { confirm, select } from "../interactive.js";
 import { createWorktree, getWorktreePath, getRepoName } from "../git.js";
 import { addTask } from "../state.js";
 import { launchClaudeInTerminal } from "../claude.js";
+import { arrangeTerminalWindows, detectEnvironment } from "../terminal.js";
 
 // Use realpathSync to resolve /tmp → /private/tmp on macOS
 const DEMO_PATH_RAW = "/tmp/paradev-demo";
@@ -144,12 +145,24 @@ export async function demoCommand() {
       }
     }
     console.log(chalk.green("done"));
+
+    // Arrange windows if using Terminal.app
+    if (detectEnvironment() === "terminal") {
+      await new Promise((r) => setTimeout(r, 1000));
+      arrangeTerminalWindows(tasks.length);
+    }
   } else {
     console.log(chalk.dim("  [4/4] スキップ"));
   }
 
+  const env = detectEnvironment();
+  const envLabel = env === "cursor" ? "Cursor" : env === "vscode" ? "VS Code" : "Terminal";
+
   console.log();
   console.log(chalk.green("  🎉 デモ環境の準備が完了しました！"));
+  if (env !== "terminal") {
+    console.log(chalk.dim(`  ${envLabel} のターミナルタブに追加されています`));
+  }
   console.log();
   console.log(chalk.dim("  デモリポジトリ: " + DEMO_PATH));
   console.log();
