@@ -1,6 +1,10 @@
 # paradev
 
-**AIエージェントは、1つのブランチを共有できない。だから並列で動かす。**
+**複数の AI エージェントを、複数のブランチで、同時に走らせる CLI ツール。**
+
+Run multiple AI agents across multiple branches, in parallel. Powered by git worktree.
+
+[English](#english) | 日本語
 
 ---
 
@@ -125,6 +129,63 @@ git の [worktree](https://git-scm.com/docs/git-worktree) 機能を使い、1つ
 - [x] GitHub PR ステータス連携
 - [ ] Web UI ダッシュボード
 - [ ] チーム機能
+
+---
+
+<a id="english"></a>
+
+## English
+
+### The Problem
+
+You're using Claude Code. It's fast. You want to ship 3 features at once.
+
+But git only lets you checkout one branch at a time. So you wait. One finishes, you start the next. Sequential. Slow.
+
+**The AI is already fast. Your workflow is the bottleneck.**
+
+### The Solution
+
+paradev launches multiple git worktrees and runs a separate Claude Code instance in each — all in parallel.
+
+```bash
+npm install -g paradev
+```
+
+```json
+[
+  { "branch": "feature/auth", "task": "Add Google OAuth login" },
+  { "branch": "feature/profile", "task": "Refactor profile page" }
+]
+```
+
+```bash
+paradev start tasks.json   # Create worktrees + launch Claude
+paradev list               # See status of all branches
+paradev watch              # Get notified when Claude finishes
+```
+
+### How It Works
+
+Uses git's native [worktree](https://git-scm.com/docs/git-worktree) to check out multiple branches in separate directories, sharing a single `.git`. Each directory gets its own Claude Code process. Fully isolated. Fully parallel.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `paradev start <file>` | Create worktrees + launch Claude from JSON |
+| `paradev list` | Show branch status, PR state, diff stats |
+| `paradev watch` | Notify on Claude completion |
+| `paradev pr <branch>` | Generate PR template |
+| `paradev stop <branch>` | Stop a Claude process |
+| `paradev clean` | Remove merged worktrees |
+
+Full reference: [docs/COMMANDS.md](docs/COMMANDS.md)
+
+### Requirements
+
+- [Node.js](https://nodejs.org/) >= 18 / [Git](https://git-scm.com/) >= 2.15 / [Claude Code](https://claude.ai/code) CLI
+- [GitHub CLI](https://cli.github.com/) (optional)
 
 ---
 
