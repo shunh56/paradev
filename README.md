@@ -1,20 +1,20 @@
 # paradev
 
-**AI agents can't share a branch. Now they don't have to.**
+**AIエージェントは、1つのブランチを共有できない。だから並列で動かす。**
 
 ---
 
-You're using Claude Code. It's fast. You want to ship 3 features at once.
+Claude Code を使っていて、こう思ったことはありませんか。
 
-But git only lets you checkout one branch at a time.
+> 「3つの機能を同時に開発したいのに、ブランチは1つしかチェックアウトできない」
 
-So you wait. One branch finishes. You start the next. Then the next. Sequential. Slow.
+1つ終わるのを待って、次を始めて、また待つ。直列。遅い。
 
-**You already have the AI. You just don't have the workflow.**
+**AIはもう速い。ボトルネックはワークフローの方だ。**
 
 ---
 
-paradev fixes this. One command. Multiple branches. Multiple Claude instances. All running in parallel.
+paradev は、1コマンドで複数ブランチを立ち上げて、それぞれに Claude Code を走らせます。
 
 ```
 $ paradev start tasks.json
@@ -45,92 +45,88 @@ $ paradev list
 
 ---
 
-## Get Started
+## はじめる
 
 ```bash
 npm install -g paradev
 ```
 
-### 1. Define your tasks
+### 1. タスクを定義する
 
 ```json
 [
-  { "branch": "feature/login-fix", "task": "Fix login validation" },
-  { "branch": "feature/profile-ui", "task": "Refactor profile page" },
-  { "branch": "feature/push-notify", "task": "Implement push notifications" }
+  { "branch": "feature/login-fix", "task": "ログインのバリデーションを修正して" },
+  { "branch": "feature/profile-ui", "task": "プロフィール画面をリファクタリングして" },
+  { "branch": "feature/push-notify", "task": "プッシュ通知の購読処理を実装して" }
 ]
 ```
 
-### 2. Launch
+### 2. 起動する
 
 ```bash
 paradev start tasks.json
 ```
 
-That's it. Each branch gets its own [git worktree](https://git-scm.com/docs/git-worktree) and its own Claude Code instance.
+これだけ。各ブランチに [git worktree](https://git-scm.com/docs/git-worktree) が作られ、それぞれで Claude Code が動き出します。
 
-### 3. Monitor
+### 3. 確認する
 
 ```bash
-paradev list          # See all branches and their status
-paradev watch         # Get notified when Claude finishes
+paradev list          # 全ブランチの状態を一覧表示
+paradev watch         # Claude が終わったら通知を受け取る
 ```
 
 ---
 
-## How It Works
+## 仕組み
 
 ```
-your-app/                        ← main branch (untouched)
+your-app/                        ← main ブランチ (そのまま)
 your-app__feature-login-fix/     ← worktree + Claude Code
 your-app__feature-profile-ui/    ← worktree + Claude Code
 your-app__feature-push-notify/   ← worktree + Claude Code
 ```
 
-paradev uses git's native [worktree](https://git-scm.com/docs/git-worktree) feature to check out multiple branches simultaneously in separate directories — all sharing a single `.git`. Each directory gets its own Claude Code process. Fully isolated. Fully parallel.
+git の [worktree](https://git-scm.com/docs/git-worktree) 機能を使い、1つの `.git` を共有しながら複数ブランチを別ディレクトリに展開します。各ディレクトリで独立した Claude Code が動くので、完全な並列開発が可能です。
 
 ---
 
-## Commands
+## コマンド
 
-| Command | What it does |
-|---------|-------------|
-| `paradev start <file>` | Create worktrees + launch Claude from a JSON file |
-| `paradev start -t "branch:task"` | Quick inline start |
-| `paradev list` | Show branch status, PR state, diff stats |
-| `paradev watch` | Notify you when Claude finishes (Mac notification) |
-| `paradev pr <branch>` | Generate a PR template from diff & commits |
-| `paradev stop <branch>` | Stop a Claude process |
-| `paradev clean` | Remove merged worktrees |
+| コマンド | 説明 |
+|---------|------|
+| `paradev start <file>` | JSON からワークツリー作成 + Claude 起動 |
+| `paradev start -t "branch:task"` | インラインで即起動 |
+| `paradev list` | ブランチ状態・PR・diff を一覧表示 |
+| `paradev watch` | Claude 完了時に Mac 通知 |
+| `paradev pr <branch>` | PR テンプレートを自動生成 |
+| `paradev stop <branch>` | Claude を停止 |
+| `paradev clean` | マージ済みワークツリーを削除 |
 
-Full command reference: [docs/COMMANDS.md](docs/COMMANDS.md)
+詳細: [docs/COMMANDS.md](docs/COMMANDS.md)
 
 ---
 
-## Requirements
+## 必要なもの
 
 - [Node.js](https://nodejs.org/) >= 18
 - [Git](https://git-scm.com/) >= 2.15
 - [Claude Code](https://claude.ai/code) CLI
-- [GitHub CLI](https://cli.github.com/) (optional — for PR status)
+- [GitHub CLI](https://cli.github.com/) (任意 — PR 状態取得用)
 
 ---
 
-## Roadmap
+## ロードマップ
 
-- [x] Parallel worktree + Claude launch
-- [x] Real-time status dashboard (`paradev list`)
-- [x] Completion notifications (`paradev watch`)
-- [x] PR template generation (`paradev pr`)
-- [x] GitHub PR status sync
-- [ ] Web UI dashboard
-- [ ] Team collaboration features
+- [x] 並列ワークツリー + Claude 自動起動
+- [x] リアルタイム状態ダッシュボード
+- [x] 完了通知
+- [x] PR テンプレート生成
+- [x] GitHub PR ステータス連携
+- [ ] Web UI ダッシュボード
+- [ ] チーム機能
 
 ---
-
-## Contributing
-
-Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
