@@ -8,6 +8,7 @@ import {
 } from "../git.js";
 import { getRepoTasks, updateTask } from "../state.js";
 import { isClaudeRunning } from "../claude.js";
+import { getPRsForBranches } from "../github.js";
 
 const STATUS_DISPLAY = {
   claude_ongoing: { icon: "\u{1F916}", label: "Claude ongoing", color: "cyan" },
@@ -56,6 +57,31 @@ export async function listCommand() {
       });
       task.status = "review";
       task.claudePid = null;
+    }
+  }
+
+  // Fetch GitHub PR status
+  const branches = tasks.map((t) => t.branch);
+  const prMap = getPRsForBranches(repoRoot, branches);
+
+  // Update state with PR info
+  for (const task of tasks) {
+    const pr = prMap[task.branch];
+    if (pr) {
+      const newStatus =
+        pr.state === "MERGED"
+          ? "merged"
+          : pr.state === "OPEN"
+            ? "pr_open"
+            : task.status;
+      if (task.prNumber !== pr.number || task.status !== newStatus) {
+        updateTask(repoRoot, task.branch, {
+          prNumber: pr.number,
+          status: newStatus,
+        });
+        task.prNumber = pr.number;
+        task.status = newStatus;
+      }
     }
   }
 

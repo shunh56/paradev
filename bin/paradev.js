@@ -6,6 +6,8 @@ import { listCommand } from "../src/commands/list.js";
 import { stopCommand } from "../src/commands/stop.js";
 import { cleanCommand } from "../src/commands/clean.js";
 import { authCommand } from "../src/commands/auth.js";
+import { watchCommand } from "../src/commands/watch.js";
+import { prCommand } from "../src/commands/pr.js";
 
 const program = new Command();
 
@@ -40,6 +42,19 @@ program
   .option("--all", "Remove all paradev worktrees")
   .option("--force", "Force removal even if there are changes")
   .action(cleanCommand);
+
+program
+  .command("watch")
+  .description("Monitor Claude processes and notify on completion")
+  .option("-i, --interval <seconds>", "Check interval in seconds", "10")
+  .action(watchCommand);
+
+program
+  .command("pr")
+  .description("Generate a PR template for a branch")
+  .argument("<branch>", "Branch name")
+  .option("-c, --copy", "Copy to clipboard instead of printing")
+  .action(prCommand);
 
 program
   .command("auth")

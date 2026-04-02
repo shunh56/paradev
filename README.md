@@ -76,6 +76,9 @@ paradev list
 | `paradev start -t "branch:task"` | インラインでタスクを指定して起動 |
 | `paradev list` | 全ブランチの状態をテーブル表示 |
 | `paradev stop <branch>` | 指定ブランチのClaudeを停止 |
+| `paradev watch` | Claudeの完了を監視してMac通知を送る |
+| `paradev pr <branch>` | ブランチのPRテンプレートを生成 |
+| `paradev pr <branch> --copy` | PRテンプレートをクリップボードにコピー |
 | `paradev clean` | マージ済みブランチのworktreeを削除 |
 | `paradev clean --all` | 全worktreeを削除 |
 | `paradev auth` | GitHub Token を設定 (任意) |
@@ -120,6 +123,30 @@ paradev start -t "feature/login:ログインを修正" -t "feature/signup:登録
 paradev start tasks.json --no-claude
 ```
 
+### `paradev watch`
+
+```bash
+# Claude の完了を監視 (10秒ごと)
+paradev watch
+
+# チェック間隔を変更
+paradev watch --interval 5
+```
+
+Claude Code のプロセスが終了すると Mac の通知センターに通知が届きます。全プロセス完了で自動終了します。
+
+### `paradev pr`
+
+```bash
+# PRテンプレートを表示
+paradev pr feature/login-fix
+
+# クリップボードにコピー
+paradev pr feature/login-fix --copy
+```
+
+ブランチの diff・コミットログから PR 本文を自動生成します。
+
 ### tasks.json format
 
 ```json
@@ -138,6 +165,7 @@ paradev start tasks.json --no-claude
 - **Node.js** >= 18
 - **Git** >= 2.15 (worktree support)
 - **Claude Code** CLI (`claude` command)
+- **GitHub CLI** (`gh` command) — PR状態取得に使用 (任意)
 
 ---
 
@@ -157,9 +185,9 @@ paradev auth
 - [x] `start` - worktree作成 + Claude Code自動起動
 - [x] `list` - ブランチ状態のテーブル表示
 - [x] `stop` / `clean` - プロセス停止・worktree削除
-- [ ] Claude完了時のMac通知
-- [ ] `paradev pr` - PRテンプレート生成
-- [ ] GitHub PR状態の自動取得
+- [x] `watch` - Claude完了時のMac通知
+- [x] `pr` - PRテンプレート生成
+- [x] `list` - GitHub PR状態の自動取得 (`gh` CLI連携)
 - [ ] Web UIダッシュボード
 
 ---
