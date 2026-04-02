@@ -18,21 +18,21 @@ Claude Code を使っていて、こう思ったことはありませんか。
 
 ---
 
-paradev は、1コマンドで複数ブランチを立ち上げて、それぞれに Claude Code を走らせます。
+paradev は、対話的に複数ブランチを立ち上げて、それぞれに Claude Code を走らせます。
 
 ```
-$ paradev start tasks.json
+$ paradev
 
-  paradev — Starting 3 parallel task(s)
+  paradev — Parallel AI Development
 
-  Creating worktree: feature/login-fix    ... done
-  Creating worktree: feature/profile-ui   ... done
-  Creating worktree: feature/push-notify  ... done
-  Launching Claude: feature/login-fix     ... done
-  Launching Claude: feature/profile-ui    ... done
-  Launching Claude: feature/push-notify   ... done
-
-  All tasks started!
+? 何をしますか？
+❯ 🚀 新しいタスクを開始する
+  📋 ブランチ一覧を見る
+  📂 ワークツリーに入る
+  🧹 ワークツリーを削除する
+  📄 tasks.json テンプレートを生成する
+  🎬 デモモードで体験する
+  👋 終了
 ```
 
 ```
@@ -45,6 +45,14 @@ $ paradev list
 │ feature/profile-ui  │ 👀 Review待ち    │ 1h ago   │ -  │ +87/-12│
 │ feature/push-notify │ ✅ PR Open       │ 3h ago   │ #42│+134/-8 │
 └─────────────────────┴──────────────────┴──────────┴────┴────────┘
+
+? アクション
+❯ 📂 ワークツリーに入る
+  🤖 Claude を起動する
+  📝 PR テンプレートを生成
+  ⏹  ブランチを停止する
+  🧹 ワークツリーを削除する
+  🔄 更新
 ```
 
 ---
@@ -58,15 +66,29 @@ npm install -g paradev
 ### すぐに体験する
 
 ```bash
-paradev demo    # テスト用リポジトリで並列開発を体験
+paradev demo
 ```
 
-### 対話式で始める
+テスト用リポジトリの作成から Claude の並列起動まで全自動で行われます。
+
+### 対話式で始める（おすすめ）
 
 ```bash
-paradev         # インタラクティブメニューが開く
-paradev add     # 対話的にタスクを追加（ブランチ名も自動提案）
+paradev add
 ```
+
+```
+✔ Claude への指示: ログインのバリデーションを修正して
+✔ ブランチ名: bugfix/fix                    ← 自動提案。編集もOK
+✔ さらにタスクを追加する？ Yes
+✔ Claude への指示: プロフィール画面をリファクタリングして
+✔ ブランチ名: feature/refactor
+✔ さらにタスクを追加する？ No
+
+✔ 個別ターミナルを開きますか？ すべて開く
+```
+
+ブランチ名は指示内容から自動提案されます。ターミナルは IDE のタブとして開きます。
 
 ### JSON ファイルで始める
 
@@ -76,7 +98,20 @@ paradev init              # tasks.json テンプレートを生成
 paradev start tasks.json  # 一括起動
 ```
 
-各ブランチに [git worktree](https://git-scm.com/docs/git-worktree) が作られ、それぞれで Claude Code が動き出します。Antigravity / Cursor / VS Code のターミナルタブに追加されます。
+### ワークツリーに入る
+
+```bash
+paradev go
+```
+
+```
+? どのブランチに入りますか？
+❯ 🤖  feature/login-fix   +24/-3
+  👀  feature/profile-ui   +87/-12
+  💤  feature/push-notify
+```
+
+Claude が既に動いているブランチを選ぶと、新しいターミナルを作らず**既存のターミナルにフォーカスが移ります**。
 
 ---
 
@@ -97,23 +132,35 @@ git の [worktree](https://git-scm.com/docs/git-worktree) 機能を使い、1つ
 
 | コマンド | 説明 |
 |---------|------|
-| `paradev` | インタラクティブメニュー |
+| `paradev` | インタラクティブメニュー（↑↓で選択） |
 | `paradev demo` | ゼロ設定のデモ体験 |
 | `paradev add` | 対話式タスク追加（ブランチ名自動提案） |
-| `paradev go` | ワークツリーに入る（既存ターミナル再利用） |
+| `paradev go [branch]` | ワークツリーに入る（既存ターミナル再利用） |
 | `paradev init` | tasks.json テンプレート生成 |
-| `paradev start <file>` | JSON から一括起動 |
-| `paradev list` | ブランチ状態ダッシュボード（アクション付き） |
+| `paradev start <file>` | JSON / インラインで一括起動 |
+| `paradev start -t "branch:task"` | インラインで即起動 |
+| `paradev list` | ブランチ状態ダッシュボード |
+| `paradev list --interactive` | アクション付きダッシュボード |
+| `paradev list --watch` | リアルタイム自動更新 |
 | `paradev watch` | Claude 完了時に Mac 通知 |
 | `paradev pr <branch>` | PR テンプレート自動生成 |
-| `paradev stop <branch>` | Claude を停止 |
-| `paradev clean` | ワークツリーを削除 |
+| `paradev pr <branch> --copy` | PR テンプレートをクリップボードにコピー |
+| `paradev stop <branch>` | Claude を停止 → Review待ちに変更 |
+| `paradev clean` | マージ済みワークツリーを削除 |
+| `paradev clean --all` | 全ワークツリーを削除 |
+| `paradev auth` | GitHub Token を設定（任意） |
 
 詳細: [docs/COMMANDS.md](docs/COMMANDS.md)
 
-### IDE 対応
+---
 
-Antigravity / Cursor / VS Code / iTerm2 / Terminal.app を自動検知し、IDE のターミナルタブとして開きます。
+## IDE 対応
+
+Antigravity / Cursor / VS Code / iTerm2 / Terminal.app を**自動検知**します。
+
+- **IDE 内で実行**: ターミナルタブとして開く（ウィンドウ増殖なし）
+- **Terminal.app で実行**: ウィンドウをグリッド配置で自動整列
+- **Claude 実行中のブランチ**: 既存ターミナルにフォーカス移動（重複作成しない）
 
 ---
 
@@ -129,13 +176,15 @@ Antigravity / Cursor / VS Code / iTerm2 / Terminal.app を自動検知し、IDE 
 ## ロードマップ
 
 - [x] 並列ワークツリー + Claude 自動起動
-- [x] リアルタイム状態ダッシュボード
-- [x] 完了通知
+- [x] リアルタイム状態ダッシュボード（アクション付き）
+- [x] インタラクティブメニュー + 対話式タスク追加
+- [x] ブランチ名自動提案（日本語 / 英語対応）
+- [x] ワークツリー移動 + 既存ターミナル再利用
+- [x] IDE 自動検知（Antigravity / Cursor / VS Code / iTerm2）
+- [x] ウィンドウ自動整列
+- [x] 完了通知（Mac 通知センター）
 - [x] PR テンプレート生成
 - [x] GitHub PR ステータス連携
-- [x] インタラクティブメニュー + 対話式タスク追加
-- [x] IDE 自動検知（Antigravity / Cursor / VS Code）
-- [x] ターミナル再利用 + ウィンドウ整列
 - [x] デモモード
 - [ ] Web UI ダッシュボード
 - [ ] チーム機能
@@ -156,25 +205,18 @@ But git only lets you checkout one branch at a time. So you wait. One finishes, 
 
 ### The Solution
 
-paradev launches multiple git worktrees and runs a separate Claude Code instance in each — all in parallel.
+paradev launches multiple git worktrees and runs a separate Claude Code instance in each — all in parallel. No commands to memorize. Just run `paradev` and follow the interactive menu.
 
 ```bash
 npm install -g paradev
 ```
 
-```json
-[
-  { "branch": "feature/auth", "task": "Add Google OAuth login" },
-  { "branch": "feature/profile", "task": "Refactor profile page" }
-]
-```
-
 ```bash
-paradev demo               # Try it instantly with a test repo
-paradev                    # Interactive menu
-paradev add                # Add tasks interactively (auto-suggests branch names)
-paradev go                 # Jump into a worktree (reuses existing terminals)
-paradev list               # Dashboard with inline actions
+paradev demo     # Try it instantly — creates a test repo + launches 3 Claudes
+paradev          # Interactive menu (arrow keys to navigate)
+paradev add      # Add tasks interactively (auto-suggests branch names)
+paradev go       # Jump into a worktree (reuses existing terminals)
+paradev list     # Status dashboard with inline actions
 ```
 
 ### How It Works
@@ -187,18 +229,23 @@ Uses git's native [worktree](https://git-scm.com/docs/git-worktree) to check out
 |---------|-------------|
 | `paradev` | Interactive menu |
 | `paradev demo` | Zero-config guided demo |
-| `paradev add` | Add tasks interactively |
-| `paradev go` | Enter worktree (reuses existing terminals) |
-| `paradev list` | Dashboard with inline actions |
+| `paradev add` | Add tasks interactively (auto-suggests branch names) |
+| `paradev go [branch]` | Enter worktree (reuses existing terminals) |
+| `paradev init` | Generate tasks.json template |
 | `paradev start <file>` | Batch launch from JSON |
+| `paradev list` | Status dashboard |
+| `paradev list --interactive` | Dashboard with inline actions |
+| `paradev list --watch` | Auto-refreshing dashboard |
+| `paradev watch` | Notify on Claude completion (Mac notification) |
 | `paradev pr <branch>` | Generate PR template |
+| `paradev stop <branch>` | Stop Claude process |
 | `paradev clean` | Remove worktrees |
 
 Full reference: [docs/COMMANDS.md](docs/COMMANDS.md)
 
 ### IDE Support
 
-Auto-detects Antigravity, Cursor, VS Code, iTerm2, and Terminal.app. Opens Claude in IDE terminal tabs instead of separate windows.
+Auto-detects Antigravity, Cursor, VS Code, iTerm2, and Terminal.app. Opens Claude in IDE terminal tabs instead of separate windows. When a branch already has Claude running, focuses the existing terminal instead of creating a new one.
 
 ### Requirements
 
