@@ -1,11 +1,14 @@
 import chalk from "chalk";
-import { execSync } from "child_process";
 import { existsSync } from "fs";
 import { select, confirm } from "../interactive.js";
-import { setTerminalTitle } from "../interactive.js";
 import { isGitRepo, getRepoRoot, getDiffStat } from "../git.js";
 import { getRepoTasks, updateTask } from "../state.js";
-import { isClaudeRunning, launchClaudeInTerminal } from "../claude.js";
+import {
+  isClaudeRunning,
+  launchClaudeInTerminal,
+  focusClaudeTerminal,
+} from "../claude.js";
+import { openTerminal, detectEnvironment } from "../terminal.js";
 
 const STATUS_ICONS = {
   claude_ongoing: "🤖",
@@ -43,7 +46,6 @@ export async function goCommand(branch) {
   let selectedBranch = branch;
 
   if (!selectedBranch) {
-    // Interactive selection
     const choices = tasks.map((t) => {
       const icon = STATUS_ICONS[t.status] || "💤";
       const diff = getDiffStat(t.worktreePath);
@@ -72,63 +74,108 @@ export async function goCommand(branch) {
   }
 
   if (!existsSync(task.worktreePath)) {
-    console.error(chalk.red(`  Error: Worktree not found at ${task.worktreePath}`));
+    console.error(
+      chalk.red(`  Error: Worktree not found at ${task.worktreePath}`)
+    );
     return;
   }
 
-  // Ask about Claude
-  let launchClaude = false;
-  if (task.status !== "claude_ongoing") {
+  const env = detectEnvironment();
+
+  // If Claude is already running, offer to focus the existing terminal
+  if (task.status === "claude_ongoing" && isClaudeRunning(task.claudePid)) {
+    let action;
     try {
-      launchClaude = await confirm({
-        message: "Claude Code を起動しますか？",
-        default: true,
+      action = await select({
+        message: `${task.branch} で Claude が実行中です`,
+        choices: [
+          { name: "既存のターミナルに移動する", value: "focus" },
+          { name: "新しいターミナルを開く (Claude なし)", value: "new" },
+          { name: "キャンセル", value: "cancel" },
+        ],
       });
     } catch {
       return;
     }
+
+    if (action === "cancel") return;
+
+    if (action === "focus") {
+      console.log(chalk.dim(`  → ${task.branch} のターミナルにフォーカス中...`));
+      const focused = focusClaudeTerminal(task.branch);
+      if (focused) {
+        console.log(chalk.green(`  ✓ ターミナルに移動しました`));
+      } else {
+        console.log(
+          chalk.yellow(`  ターミナルが見つかりません。新しく開きます...`)
+        );
+        openTerminalAt(task.worktreePath, task.branch, env);
+      }
+      console.log();
+      return;
+    }
+
+    if (action === "new") {
+      openTerminalAt(task.worktreePath, task.branch, env);
+      console.log();
+      return;
+    }
+  }
+
+  // Not running — ask about Claude
+  let launchClaude = false;
+  try {
+    launchClaude = await confirm({
+      message: "Claude Code を起動しますか？",
+      default: true,
+    });
+  } catch {
+    return;
   }
 
   if (launchClaude) {
     console.log();
     console.log(chalk.dim(`  Launching Claude in ${task.branch} ...`));
     try {
-      const pid = launchClaudeInTerminal(task.worktreePath, task.task, task.branch);
-      updateTask(repoRoot, task.branch, { status: "claude_ongoing", claudePid: pid });
+      const pid = launchClaudeInTerminal(
+        task.worktreePath,
+        task.task,
+        task.branch
+      );
+      updateTask(repoRoot, task.branch, {
+        status: "claude_ongoing",
+        claudePid: pid,
+      });
       console.log(chalk.green(`  ✓ Claude started in new terminal`));
     } catch {
       console.log(chalk.yellow("  Could not launch Claude"));
     }
   } else {
-    // Open a new terminal at the worktree path
-    console.log();
-    console.log(chalk.dim(`  Opening terminal in ${task.branch} ...`));
-    try {
-      openTerminalAt(task.worktreePath, task.branch);
-      console.log(chalk.green(`  ✓ Terminal opened`));
-    } catch {
-      // Fallback: just print the path
-      console.log();
-      console.log(chalk.bold(`  cd ${task.worktreePath}`));
-      console.log(chalk.dim("  ↑ Copy this to navigate to the worktree"));
-    }
+    openTerminalAt(task.worktreePath, task.branch, env);
   }
   console.log();
 }
 
-function openTerminalAt(worktreePath, branchName) {
-  const escapedPath = worktreePath.replace(/'/g, "'\\''");
-  const title = `[paradev] ${branchName}`;
-  const escapedTitle = title.replace(/'/g, "'\\''");
-
-  const script = `
-    tell application "Terminal"
-      activate
-      do script "printf '\\\\e]0;${escapedTitle}\\\\a' && cd '${escapedPath}' && echo '\\n  📂 paradev worktree: ${branchName}\\n'"
-    end tell
-  `;
-
-  execSync(`osascript -e '${script.replace(/'/g, "'\\''")}'`, {
-    stdio: "pipe",
-  });
+function openTerminalAt(worktreePath, branchName, env) {
+  console.log();
+  console.log(chalk.dim(`  Opening terminal in ${branchName} ...`));
+  const envLabel =
+    env === "cursor"
+      ? "Cursor"
+      : env === "vscode"
+        ? "VS Code"
+        : "Terminal";
+  try {
+    openTerminal(
+      worktreePath,
+      `echo '  📂 [paradev] ${branchName}'`,
+      branchName,
+      env
+    );
+    console.log(chalk.green(`  ✓ ${envLabel} にターミナルを開きました`));
+  } catch {
+    console.log();
+    console.log(chalk.bold(`  cd ${worktreePath}`));
+    console.log(chalk.dim("  ↑ Copy this to navigate to the worktree"));
+  }
 }
