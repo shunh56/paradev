@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { Command } from "commander";
 import { startCommand } from "../src/commands/start.js";
 import { listCommand } from "../src/commands/list.js";
@@ -15,12 +18,16 @@ import { initCommand } from "../src/commands/init.js";
 import { demoCommand } from "../src/commands/demo.js";
 import { listInteractiveCommand } from "../src/commands/listInteractive.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pkg = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
+
 const program = new Command();
 
 program
   .name("paradev")
   .description("Parallel development with Claude Code × git worktree")
-  .version("0.2.0")
+  .version(pkg.version)
   .action(menuCommand);
 
 program
