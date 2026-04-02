@@ -160,11 +160,13 @@ function openTerminalAt(worktreePath, branchName, env) {
   console.log();
   console.log(chalk.dim(`  Opening terminal in ${branchName} ...`));
   const envLabel =
-    env === "cursor"
-      ? "Cursor"
-      : env === "vscode"
-        ? "VS Code"
-        : "Terminal";
+    env === "antigravity"
+      ? "Antigravity"
+      : env === "cursor"
+        ? "Cursor"
+        : env === "vscode"
+          ? "VS Code"
+          : "Terminal";
   try {
     openTerminal(
       worktreePath,
