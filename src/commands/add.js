@@ -9,6 +9,7 @@ import {
 } from "../git.js";
 import { addTask } from "../state.js";
 import { launchClaudeInTerminal } from "../claude.js";
+import { arrangeTerminalWindows, detectEnvironment } from "../terminal.js";
 
 export async function addCommand() {
   const cwd = process.cwd();
@@ -160,8 +161,18 @@ export async function addCommand() {
     });
   }
 
+  // Arrange terminal windows if using Terminal.app
+  if (openBranches.size > 1 && detectEnvironment() === "terminal") {
+    arrangeTerminalWindows(openBranches.size);
+  }
+
   console.log();
   console.log(chalk.green("  All tasks started!"));
+  const env = detectEnvironment();
+  const envLabel = env === "cursor" ? "Cursor" : env === "vscode" ? "VS Code" : "Terminal";
+  if (openBranches.size > 0) {
+    console.log(chalk.dim(`  ${envLabel} に ${openBranches.size} つのターミナルを開きました`));
+  }
   console.log(chalk.dim("  Run `paradev list` or `paradev` to check status"));
   console.log();
 }
