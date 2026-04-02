@@ -30,7 +30,7 @@ function formatElapsed(dateStr) {
   return "just now";
 }
 
-export async function listCommand() {
+export async function listCommand(options = {}) {
   const cwd = process.cwd();
 
   if (!isGitRepo(cwd)) {
@@ -140,4 +140,26 @@ export async function listCommand() {
   console.log();
   console.log(table.toString());
   console.log();
+
+  // Watch mode: refresh every N seconds
+  if (options.watch) {
+    const interval = (options.interval || 5) * 1000;
+    console.log(chalk.dim(`  Watching... (${interval / 1000}s interval, Ctrl+C to stop)`));
+    console.log();
+
+    await new Promise((resolve) => {
+      const timer = setInterval(async () => {
+        // Clear screen and re-render
+        process.stdout.write("\x1b[2J\x1b[H");
+        await listCommand({ ...options, watch: false });
+        console.log(chalk.dim(`  Watching... (${interval / 1000}s interval, Ctrl+C to stop)`));
+        console.log();
+      }, interval);
+
+      process.on("SIGINT", () => {
+        clearInterval(timer);
+        resolve();
+      });
+    });
+  }
 }
