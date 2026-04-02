@@ -36,25 +36,56 @@ npm version major   # 0.2.0 → 1.0.0 (破壊的変更 / 安定版リリース)
 ## Release Flow (詳細)
 
 ```
-1. develop で開発完了
+1. develop から feature/xxx ブランチを切る
    │
-2. npm version patch/minor/major を実行
+2. feature/xxx で開発
+   │
+3. feature/xxx → develop へ PR 作成 → マージ
+   │
+4. develop で npm version patch/minor/major を実行
    │  → package.json 更新 + commit + tag 作成
    │
-3. git push && git push --tags
+5. git push && git push --tags
    │
-4. develop → main へ PR 作成
+6. develop → main へ PR 作成
    │  PR タイトル例: "Release v0.2.0"
    │
-5. PR マージ
+7. PR マージ
    │
-6. GitHub Actions 自動実行:
+8. GitHub Actions 自動実行:
    │  ├── バージョン検証 (npm registry と比較)
    │  ├── テスト実行
    │  ├── npm publish
    │  └── GitHub Release 作成 (tag ベース)
    │
-7. 完了
+9. 完了
+```
+
+## コマンドで表すと
+
+```bash
+# 1. feature ブランチを切る
+git checkout develop
+git checkout -b feature/xxx
+
+# 2. 開発する
+# ...
+
+# 3. develop へ PR マージ
+git push -u origin feature/xxx
+gh pr create --base develop --head feature/xxx --title "Add xxx"
+gh pr merge <number> --merge
+
+# 4. バージョンを上げる
+git checkout develop && git pull
+npm version patch   # or minor / major
+
+# 5. push
+git push && git push --tags
+
+# 6. main へ PR マージ → npm auto-publish
+gh pr create --base main --head develop --title "Release vX.Y.Z"
+gh pr merge <number> --merge
 ```
 
 ## 異常系
