@@ -2,25 +2,29 @@ import { spawn, execSync } from "child_process";
 import { platform } from "os";
 
 export function launchClaude(worktreePath, task) {
-  // Launch claude in a new terminal window with the task as initial prompt
+  return launchClaudeInTerminal(worktreePath, task, null);
+}
+
+export function launchClaudeInTerminal(worktreePath, task, branchName) {
   const os = platform();
 
   if (os === "darwin") {
-    return launchClaudeMac(worktreePath, task);
+    return launchClaudeMac(worktreePath, task, branchName);
   } else {
     return launchClaudeFallback(worktreePath, task);
   }
 }
 
-function launchClaudeMac(worktreePath, task) {
-  // Use osascript to open a new Terminal.app window
+function launchClaudeMac(worktreePath, task, branchName) {
   const escapedPath = worktreePath.replace(/'/g, "'\\''");
   const escapedTask = task.replace(/'/g, "'\\''").replace(/"/g, '\\"');
+  const title = branchName ? `[paradev] ${branchName}` : "[paradev]";
+  const escapedTitle = title.replace(/'/g, "'\\''");
 
   const script = `
     tell application "Terminal"
       activate
-      do script "cd '${escapedPath}' && claude '${escapedTask}'"
+      do script "printf '\\\\e]0;${escapedTitle}\\\\a' && cd '${escapedPath}' && claude '${escapedTask}'"
     end tell
   `;
 
@@ -34,7 +38,6 @@ function launchClaudeMac(worktreePath, task) {
 }
 
 function launchClaudeFallback(worktreePath, task) {
-  // Fallback: launch claude as a background process
   const proc = spawn("claude", [task], {
     cwd: worktreePath,
     stdio: "ignore",

@@ -7,8 +7,8 @@ export async function cleanCommand(options) {
   const cwd = process.cwd();
 
   if (!isGitRepo(cwd)) {
-    console.error(chalk.red("Error: Not a git repository"));
-    process.exit(1);
+    console.error(chalk.red("  Error: Not a git repository"));
+    return;
   }
 
   const repoRoot = getRepoRoot(cwd);
@@ -19,9 +19,26 @@ export async function cleanCommand(options) {
     return;
   }
 
-  const toClean = options.all
-    ? tasks
-    : tasks.filter((t) => t.status === "merged");
+  let toClean;
+  if (options.interactive) {
+    const { checkbox } = await import("../interactive.js");
+    try {
+      const selected = await checkbox({
+        message: "削除するブランチを選択:",
+        choices: tasks.map((t) => ({
+          name: t.branch,
+          value: t.branch,
+        })),
+      });
+      toClean = tasks.filter((t) => selected.includes(t.branch));
+    } catch {
+      return;
+    }
+  } else {
+    toClean = options.all
+      ? tasks
+      : tasks.filter((t) => t.status === "merged");
+  }
 
   if (toClean.length === 0) {
     console.log(chalk.dim("  No merged branches to clean."));
