@@ -3,10 +3,14 @@ import { platform } from "os";
 
 /**
  * Detect the current terminal environment
- * Returns: "cursor" | "vscode" | "terminal" | "iterm" | "unknown"
+ * Returns: "antigravity" | "cursor" | "vscode" | "terminal" | "iterm" | "unknown"
  */
 export function detectEnvironment() {
-  // Cursor sets CURSOR_CHANNEL or TERM_PROGRAM=vscode
+  // Antigravity sets ANTIGRAVITY_* env vars but TERM_PROGRAM=vscode
+  if (process.env.ANTIGRAVITY_CLI_ALIAS || process.env.ANTIGRAVITY_EDITOR_READY) {
+    return "antigravity";
+  }
+  // Cursor sets CURSOR_CHANNEL or CURSOR_TRACE_DIR
   if (process.env.CURSOR_CHANNEL || process.env.CURSOR_TRACE_DIR) {
     return "cursor";
   }
@@ -26,11 +30,12 @@ export function detectEnvironment() {
 }
 
 /**
- * Get the IDE CLI command name
+ * Get the IDE app name for AppleScript
  */
-function getIdeCli(env) {
-  if (env === "cursor") return "cursor";
-  if (env === "vscode") return "code";
+function getIdeAppName(env) {
+  if (env === "antigravity") return "Antigravity";
+  if (env === "cursor") return "Cursor";
+  if (env === "vscode") return "Code";
   return null;
 }
 
@@ -47,6 +52,7 @@ export function openTerminal(worktreePath, command, branchName, env) {
   if (!env) env = detectEnvironment();
 
   switch (env) {
+    case "antigravity":
     case "cursor":
     case "vscode":
       return openInIdeTerminal(worktreePath, command, branchName, env);
@@ -62,16 +68,11 @@ export function openTerminal(worktreePath, command, branchName, env) {
  * Open a new terminal tab in VS Code / Cursor
  */
 function openInIdeTerminal(worktreePath, command, branchName, env) {
-  const ideCli = getIdeCli(env);
   const escapedPath = worktreePath.replace(/'/g, "'\\''");
   const escapedCmd = command.replace(/'/g, "'\\''").replace(/"/g, '\\"');
   const title = `[paradev] ${branchName || "task"}`;
 
-  // Use AppleScript to control the IDE:
-  // 1. Activate the IDE
-  // 2. Create a new terminal via keyboard shortcut
-  // 3. Send the cd + command
-  const appName = env === "cursor" ? "Cursor" : "Code";
+  const appName = getIdeAppName(env);
 
   const script = `
     tell application "${appName}"
@@ -204,8 +205,8 @@ export function focusTerminal(branchName, env) {
   const title = `[paradev] ${branchName}`;
 
   try {
-    if (env === "cursor" || env === "vscode") {
-      const appName = env === "cursor" ? "Cursor" : "Code";
+    if (env === "antigravity" || env === "cursor" || env === "vscode") {
+      const appName = getIdeAppName(env);
       // Try to find and focus the terminal tab with matching title
       const script = `
         tell application "${appName}"

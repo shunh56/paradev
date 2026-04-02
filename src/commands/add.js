@@ -169,7 +169,7 @@ export async function addCommand() {
   console.log();
   console.log(chalk.green("  All tasks started!"));
   const env = detectEnvironment();
-  const envLabel = env === "cursor" ? "Cursor" : env === "vscode" ? "VS Code" : "Terminal";
+  const envLabel = env === "antigravity" ? "Antigravity" : env === "cursor" ? "Cursor" : env === "vscode" ? "VS Code" : "Terminal";
   if (openBranches.size > 0) {
     console.log(chalk.dim(`  ${envLabel} に ${openBranches.size} つのターミナルを開きました`));
   }
