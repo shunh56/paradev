@@ -142,4 +142,48 @@ describe("state.js", () => {
       assert.strictEqual(before, after);
     });
   });
+
+  describe("atomic write & backup recovery", () => {
+    it("creates a backup file on save", () => {
+      const statePath = join(homedir(), ".paradev", "state.json");
+      const bakPath = join(homedir(), ".paradev", "state.json.bak");
+
+      // Save triggers backup
+      const state = getState();
+      saveState(state);
+
+      assert.ok(existsSync(bakPath), "Backup file should exist after save");
+    });
+
+    it("recovers from corrupted state.json using backup", () => {
+      const statePath = join(homedir(), ".paradev", "state.json");
+      const bakPath = join(homedir(), ".paradev", "state.json.bak");
+
+      // Save valid state (creates backup)
+      const state = getState();
+      saveState(state);
+
+      // Corrupt the main state file
+      writeFileSync(statePath, "NOT VALID JSON{{{");
+
+      // getState should recover from backup
+      const recovered = getState();
+      assert.ok(recovered.repos, "Recovered state should have repos");
+    });
+
+    it("returns empty state when both files are corrupted", () => {
+      const statePath = join(homedir(), ".paradev", "state.json");
+      const bakPath = join(homedir(), ".paradev", "state.json.bak");
+
+      // Corrupt both files
+      writeFileSync(statePath, "CORRUPT");
+      writeFileSync(bakPath, "ALSO CORRUPT");
+
+      const state = getState();
+      assert.deepStrictEqual(state, { repos: {} });
+
+      // Restore valid state for cleanup
+      saveState({ repos: {} });
+    });
+  });
 });
