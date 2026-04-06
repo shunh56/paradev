@@ -1,8 +1,10 @@
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, copyFileSync, renameSync, existsSync } from "fs";
 import { join } from "path";
 import { ensureParadevDir, PARADEV_DIR } from "./config.js";
 
 const STATE_PATH = join(PARADEV_DIR, "state.json");
+const STATE_BAK_PATH = join(PARADEV_DIR, "state.json.bak");
+const STATE_TMP_PATH = join(PARADEV_DIR, "state.json.tmp");
 
 /**
  * State schema:
@@ -31,12 +33,32 @@ export function getState() {
   if (!existsSync(STATE_PATH)) {
     return { repos: {} };
   }
-  return JSON.parse(readFileSync(STATE_PATH, "utf-8"));
+  try {
+    return JSON.parse(readFileSync(STATE_PATH, "utf-8"));
+  } catch {
+    // state.json is corrupted — try backup
+    if (existsSync(STATE_BAK_PATH)) {
+      try {
+        console.error("Warning: state.json is corrupted. Restoring from backup.");
+        return JSON.parse(readFileSync(STATE_BAK_PATH, "utf-8"));
+      } catch {
+        // backup is also corrupted
+      }
+    }
+    console.error("Warning: state.json and backup are both corrupted. Starting with empty state.");
+    return { repos: {} };
+  }
 }
 
 export function saveState(state) {
   ensureParadevDir();
-  writeFileSync(STATE_PATH, JSON.stringify(state, null, 2));
+  // Backup current state before writing
+  if (existsSync(STATE_PATH)) {
+    copyFileSync(STATE_PATH, STATE_BAK_PATH);
+  }
+  // Atomic write: write to tmp, then rename
+  writeFileSync(STATE_TMP_PATH, JSON.stringify(state, null, 2));
+  renameSync(STATE_TMP_PATH, STATE_PATH);
 }
 
 export function getRepoTasks(repoPath) {
