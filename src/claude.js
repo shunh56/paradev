@@ -1,5 +1,6 @@
 import { spawn, execSync } from "child_process";
 import { platform } from "os";
+import { readFileSync } from "fs";
 import { openTerminal, focusTerminal, detectEnvironment } from "./terminal.js";
 
 export function launchClaude(worktreePath, task) {
@@ -18,14 +19,37 @@ export function focusClaudeTerminal(branchName) {
   return focusTerminal(branchName, env);
 }
 
+export function getProcessName(pid) {
+  try {
+    const os = platform();
+    if (os === "darwin") {
+      return execSync(`ps -p ${pid} -o comm=`, { stdio: "pipe" })
+        .toString()
+        .trim();
+    } else if (os === "linux") {
+      return readFileSync(`/proc/${pid}/comm`, "utf-8").trim();
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export function isClaudeRunning(pid) {
   if (!pid) return false;
   try {
     process.kill(pid, 0);
-    return true;
   } catch {
     return false;
   }
+  // Process exists — verify it's actually a Claude/Node process
+  const name = getProcessName(pid);
+  if (name === null) {
+    // Couldn't verify process name; fall back to original behavior
+    return true;
+  }
+  const lowerName = name.toLowerCase();
+  return lowerName.includes("claude") || lowerName.includes("node");
 }
 
 export function sendNotification(title, message) {
