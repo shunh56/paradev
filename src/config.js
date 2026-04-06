@@ -16,7 +16,15 @@ export function getConfig() {
   if (!existsSync(CONFIG_PATH)) {
     return {};
   }
-  return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+  try {
+    return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+  } catch {
+    console.error(
+      "Warning: ~/.paradev/config.json is corrupted.\n" +
+      "Run `paradev auth` to reconfigure, or delete ~/.paradev/config.json"
+    );
+    return {};
+  }
 }
 
 export function saveConfig(config) {

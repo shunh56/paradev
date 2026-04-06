@@ -13,6 +13,7 @@ import {
   removeWorktree,
   listWorktrees,
   getDiffStat,
+  validateBranchName,
 } from "../src/git.js";
 
 // Test repo setup
@@ -45,6 +46,66 @@ describe("git.js — unit tests", () => {
     it("places worktree in parent directory as sibling", () => {
       const result = getWorktreePath("/projects/my-app", "feature/x");
       assert.match(result, /^\/projects\/my-app__/);
+    });
+  });
+
+  describe("validateBranchName", () => {
+    it("accepts valid branch names", () => {
+      assert.deepStrictEqual(validateBranchName("feature/login-fix"), { valid: true });
+      assert.deepStrictEqual(validateBranchName("bugfix/issue-123"), { valid: true });
+      assert.deepStrictEqual(validateBranchName("hotfix"), { valid: true });
+      assert.deepStrictEqual(validateBranchName("feature/auth/google"), { valid: true });
+    });
+
+    it("rejects empty branch names", () => {
+      assert.strictEqual(validateBranchName("").valid, false);
+      assert.strictEqual(validateBranchName("  ").valid, false);
+    });
+
+    it("rejects branch names starting with -", () => {
+      const result = validateBranchName("-feature");
+      assert.strictEqual(result.valid, false);
+      assert.match(result.reason, /start with/);
+    });
+
+    it("rejects branch names with spaces", () => {
+      const result = validateBranchName("feature login");
+      assert.strictEqual(result.valid, false);
+      assert.match(result.reason, /spaces/);
+    });
+
+    it("rejects branch names with ..", () => {
+      const result = validateBranchName("feature..login");
+      assert.strictEqual(result.valid, false);
+      assert.match(result.reason, /\.\./);
+    });
+
+    it("rejects branch names with ~", () => {
+      assert.strictEqual(validateBranchName("feature~1").valid, false);
+    });
+
+    it("rejects branch names with ^", () => {
+      assert.strictEqual(validateBranchName("feature^2").valid, false);
+    });
+
+    it("rejects branch names with :", () => {
+      assert.strictEqual(validateBranchName("feature:login").valid, false);
+    });
+
+    it("rejects branch names with backslash", () => {
+      assert.strictEqual(validateBranchName("feature\\login").valid, false);
+    });
+
+    it("rejects branch names with @{", () => {
+      assert.strictEqual(validateBranchName("feature@{0}").valid, false);
+    });
+
+    it("rejects branch names ending with .", () => {
+      assert.strictEqual(validateBranchName("feature.").valid, false);
+    });
+
+    it("rejects branch names ending with .lock", () => {
+      assert.strictEqual(validateBranchName("feature.lock").valid, false);
     });
   });
 

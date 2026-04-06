@@ -6,6 +6,7 @@ import {
   getRepoRoot,
   createWorktree,
   getWorktreePath,
+  validateBranchName,
 } from "../git.js";
 import { addTask } from "../state.js";
 import { launchClaudeInTerminal } from "../claude.js";
@@ -51,9 +52,16 @@ export async function addCommand() {
       break;
     }
 
-    tasks.push({ branch: branch.trim(), task: taskDesc.trim() });
+    const trimmedBranch = branch.trim();
+    const validation = validateBranchName(trimmedBranch);
+    if (!validation.valid) {
+      console.log(chalk.red(`  ✗ Invalid branch name: ${validation.reason}`));
+      continue;
+    }
 
-    console.log(chalk.green(`  ✓ ${branch}`));
+    tasks.push({ branch: trimmedBranch, task: taskDesc.trim() });
+
+    console.log(chalk.green(`  ✓ ${trimmedBranch}`));
 
     let addMore;
     try {
