@@ -157,6 +157,46 @@ export function getDiffStat(dir) {
   }
 }
 
+export function validateBranchName(name) {
+  if (!name || !name.trim()) {
+    return { valid: false, reason: "Branch name cannot be empty" };
+  }
+  if (name.startsWith("-")) {
+    return { valid: false, reason: "Branch name cannot start with '-'" };
+  }
+  if (name.includes(" ")) {
+    return { valid: false, reason: "Branch name cannot contain spaces" };
+  }
+  if (name.includes("..")) {
+    return { valid: false, reason: "Branch name cannot contain '..'" };
+  }
+  if (name.includes("~")) {
+    return { valid: false, reason: "Branch name cannot contain '~'" };
+  }
+  if (name.includes("^")) {
+    return { valid: false, reason: "Branch name cannot contain '^'" };
+  }
+  if (name.includes(":")) {
+    return { valid: false, reason: "Branch name cannot contain ':'" };
+  }
+  if (name.includes("\\")) {
+    return { valid: false, reason: "Branch name cannot contain '\\'" };
+  }
+  if (name.includes("@{")) {
+    return { valid: false, reason: "Branch name cannot contain '@{'" };
+  }
+  if (name.endsWith(".")) {
+    return { valid: false, reason: "Branch name cannot end with '.'" };
+  }
+  if (name.endsWith(".lock")) {
+    return { valid: false, reason: "Branch name cannot end with '.lock'" };
+  }
+  if (/[\x00-\x1f\x7f]/.test(name)) {
+    return { valid: false, reason: "Branch name cannot contain control characters" };
+  }
+  return { valid: true };
+}
+
 function parseDiffStat(output) {
   const lines = output.trim().split("\n");
   const summary = lines[lines.length - 1] || "";

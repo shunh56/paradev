@@ -6,6 +6,7 @@ import {
   getRepoRoot,
   createWorktree,
   getWorktreePath,
+  validateBranchName,
 } from "../git.js";
 import { addTask } from "../state.js";
 import { launchClaude } from "../claude.js";
@@ -34,6 +35,9 @@ export async function startCommand(file, options) {
     } catch (e) {
       console.error(chalk.red(`Error: Invalid JSON in ${filePath}`));
       console.error(e.message);
+      console.error();
+      console.error(chalk.dim("Expected format:"));
+      console.error(chalk.dim('  [{ "branch": "feature/xxx", "task": "description" }]'));
       process.exit(1);
     }
   } else if (options.task) {
@@ -83,6 +87,25 @@ export async function startCommand(file, options) {
       );
       process.exit(1);
     }
+  }
+
+  // Validate branch names and filter out invalid ones
+  const validTasks = [];
+  for (const task of tasks) {
+    const validation = validateBranchName(task.branch);
+    if (!validation.valid) {
+      console.error(
+        chalk.yellow(`  Skipping "${task.branch}": ${validation.reason}`)
+      );
+    } else {
+      validTasks.push(task);
+    }
+  }
+  tasks = validTasks;
+
+  if (tasks.length === 0) {
+    console.error(chalk.red("Error: No valid tasks remaining after validation"));
+    process.exit(1);
   }
 
   console.log();
